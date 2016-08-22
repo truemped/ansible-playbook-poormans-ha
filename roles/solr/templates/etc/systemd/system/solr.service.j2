@@ -1,0 +1,13 @@
+[Unit]
+Description=Apache Solr
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=simple
+WorkingDirectory={{ solr_install_path }}/{{ solr_filename }}/example
+ExecStart=/usr/bin/java -jar -server -Dsolr.solr.home={{ solr_home }} -Djetty.host={{ solr_host }} -Djetty.port={{ solr_port }} -Xmx{{ solr_xmx }} -Xms{{ solr_xms }} start.jar
+Restart=on-failure
+LimitNOFILE=10000
+
+[Install]
+WantedBy=multi-user.target

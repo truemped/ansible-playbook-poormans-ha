@@ -1,0 +1,18 @@
+
+thumbor_user: thumbor
+thumbor_specific_version: 6.0.1
+
+thumbor_config_dir: /etc/thumbor
+thumbor_config: "{{ thumbor_config_dir }}/thumbor.conf"
+thumbor_key: "{{ thumbor_config_dir }}/thumbor.key"
+
+thumbor_processes: 2
+
+thumbor_client_side_cache_duration: 2  # days
+
+thumbor_result_storage_path: /storage/shared/thumbor
+thumbor_result_expiration_days: 30
+thumbor_signing_key: ABC123 # change
+
+thumbor_venv_dir: /opt/thumbor
+thumbor_log_dir: /var/log/thumbor

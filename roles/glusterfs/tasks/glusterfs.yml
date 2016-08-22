@@ -1,0 +1,19 @@
+
+- name: get gluster peer status
+  command: gluster peer status
+  register: gluster_peer_status
+  ignore_errors: true
+
+- name: connect peer
+  command: "gluster peer probe {{ other_internal_hostname }}"
+  when: gluster_peer_status.stdout.find("{{ other_internal_hostname }}") == -1
+
+- name: get gluster volume status
+  command: gluster volume status
+  register: gluster_volume_status
+  ignore_errors: true
+
+- name: create gluster volume
+  command: "gluster volume create shared replica 2 transport tcp {{ my_internal_hostname }}:/data/shared {{ other_internal_hostname }}:/data/shared force"
+  when: gluster_volume_status.stdout.find('shared') == -1
+  notify: start gluster shared volume

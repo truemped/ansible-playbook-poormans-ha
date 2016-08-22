@@ -1,0 +1,2 @@
+- include: security.yml
+  tags: security

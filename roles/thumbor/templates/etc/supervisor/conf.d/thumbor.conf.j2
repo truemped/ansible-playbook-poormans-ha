@@ -1,0 +1,13 @@
+
+[program:thumbor]
+command={{ thumbor_venv_dir }}/bin/thumbor -p 80%(process_num)02d -c {{ thumbor_config }} -k {{ thumbor_key }}
+directory={{ thumbor_venv_dir }}
+process_name=thumbor80%(process_num)02d
+numprocs={{ thumbor_processes }}
+user={{ thumbor_user }}
+autostart=true
+autrestart=true
+stdout_logfile={{ thumbor_log_dir }}/thumbor80%(process_num)02d.stdout.log
+stdout_logfile_backups=3
+stderr_logfile={{ thumbor_log_dir }}/thumbor80%(process_num)02d.stderr.log
+stderr_logfile_backups=3

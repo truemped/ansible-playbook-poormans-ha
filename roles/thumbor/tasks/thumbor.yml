@@ -1,0 +1,92 @@
+
+- name: Install supervisord, python and image libraries / thumbor dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - python-dev
+    - python-virtualenv
+    - libcurl4-openssl-dev
+    - libssl-dev
+    - python-pgmagick
+    - python-pil
+    - libtiff5-dev
+    - libpng12-dev
+    - libjpeg-dev
+    - libjasper-dev
+    - libwebp-dev
+  tags: deps
+
+- name: Create a system group for thumbor user (named after user)
+  group:
+    name: "{{ thumbor_user }}"
+    system: yes
+    state: present
+
+- name: Ensure system user for thumbor existis
+  user:
+    name: "{{ thumbor_user }}"
+    group: "{{ thumbor_user }}"
+    system: yes
+    state: present
+    home: "{{ thumbor_venv_dir }}"
+
+- name: Install specific Thumbor package version (when specific version given)
+  pip:
+    name: thumbor
+    version: "{{ thumbor_specific_version }}"
+    state: present
+    virtualenv: "{{ thumbor_venv_dir }}"
+    virtualenv_python: /usr/bin/python2.7
+
+- name: Create thumbor config directory
+  file:
+    path: "{{ thumbor_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0775
+
+- name: Create thumbor configuration
+  template:
+    src: etc/thumbor/thumbor.conf.j2
+    dest: "{{ thumbor_config_dir }}/thumbor.conf"
+    owner: root
+    group: "{{ thumbor_user }}"
+    mode: 0640
+
+- name: Add thumbor secret key for signed requests
+  template:
+    src: etc/thumbor/thumbor.key.j2
+    dest: "{{ thumbor_config_dir }}/thumbor.key"
+    owner: root
+    group: "{{ thumbor_user }}"
+    mode: 0640
+
+- name: Ensure thumbor log dir exists
+  file:
+    path: "{{ thumbor_log_dir }}"
+    state: directory
+    owner: "{{ thumbor_user }}"
+    group: "{{ thumbor_user }}"
+    mode: 0755
+
+- name: Ensure thumbor storage directory exists
+  file:
+    path: "{{ thumbor_result_storage_path }}"
+    state: directory
+    owner: "{{ thumbor_user }}"
+    group: "{{ thumbor_user }}"
+    mode: 0755
+
+- name: Make sure supervisord service is enabled to start on boot
+  service:
+    name: supervisor
+    enabled: yes
+
+- name: Copy supervisord config file (which spawns the thumbor processes)
+  template:
+    src: etc/supervisor/conf.d/thumbor.conf.j2
+    dest: "/etc/supervisor/conf.d/thumbor.conf"
+  notify:
+    - restart supervisor

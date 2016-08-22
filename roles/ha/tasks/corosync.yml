@@ -1,0 +1,25 @@
+
+- name: upload corosync auth key
+  copy:
+    content: "{{ corosync_authkey }}"
+    dest: /etc/corosync/authkey
+    owner: root
+    group: root
+    mode: 0400
+  notify:
+    - restart corosync
+
+- name: allow corosync ports for private interfaces
+  ufw: rule=allow port={{ item }} proto=udp from={{ other_private_ip }} to={{ my_private_ip }}
+  with_items:
+    - 5404
+    - 5405
+    - 5406
+
+- name: Update corosync configuration
+  template: src=etc/corosync/corosync.conf.j2 dest=/etc/corosync/corosync.conf owner=root group=root mode=0644
+  notify:
+    - restart corosync
+
+- name: Ensure corosync is started on boot
+  service: name=corosync enabled=true

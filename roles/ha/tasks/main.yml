@@ -1,0 +1,18 @@
+
+- name: install packages
+  apt: pkg={{ item }} state=installed default_release=jessie-backports update_cache=yes
+  with_items:
+    - pacemaker
+    - corosync
+    - libqb0
+    - fence-agents
+    - pacemaker-cli-utils
+    - crmsh
+    - python-requests
+  tags: [deps, ha]
+
+- include: corosync.yml
+  tags: [corosync, ha]
+
+- include: pacemaker.yml
+  tags: [pacemaker, ha]

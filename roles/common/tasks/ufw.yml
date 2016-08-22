@@ -1,0 +1,20 @@
+---
+# Installs and configures ufw, which in turn uses iptables for firewall management
+
+# ufw includes sensible icmp defaults
+- name: Install ufw
+  apt: pkg=ufw state=present
+  tags: deps
+
+- name: Deny everything
+  ufw: policy=deny
+
+- name: Set firewall rules for web traffic and SSH
+  ufw: rule=allow port={{ item }} proto=tcp
+  with_items:
+    - http
+    - https
+    - ssh
+
+- name: Enable UFW
+  ufw: state=enabled

@@ -1,0 +1,23 @@
+floating_ip: 1.2.3.6
+
+digital_ocean_access_token:
+
+corosync_authkey:
+
+vpn_name: mesh0
+thumbor_signing_key:
+
+# A list of directives for the events section.
+nginx_events_params:
+  - worker_connections 512
+
+# A list of hashs that define the servers for nginx,
+# as with http parameters. Any valid server parameters
+# can be defined here.
+nginx_http_params:
+  - sendfile on
+  - access_log /var/log/nginx/access.log
+
+nginx_sites:
+
+nginx_configs:

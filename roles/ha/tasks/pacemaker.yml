@@ -1,0 +1,29 @@
+
+- name: Ensure pacemaker is started on boot
+  service: name=pacemaker enabled=true
+
+- name: get pacemaker configuration
+  register: pacemaker_config
+  command: crm config show
+  ignore_errors: true
+
+- name: Disable STONITH
+  command: crm configure property stonith-enabled=false
+  when: pacemaker_config.stdout.find('stonith-enabled=false') == -1
+
+- name: Disable no-quorum logs
+  command: crm configure property no-quorum-policy=ignore
+  when: pacemaker_config.stdout.find('no-quorum-policy=ignore') == -1
+
+- name: upload assign-ip script
+  copy: src=usr/local/bin/assign-ip dest=/usr/local/bin/assign-ip owner=root group=root mode=0644
+
+- name: create digitalocean resource agent
+  file: path=/usr/lib/ocf/resource.d/digitalocean state=directory mode=0755
+
+- name: upload floatingip resource
+  copy: src=usr/lib/ocf/resource.d/digitalocean/floatingip dest=/usr/lib/ocf/resource.d/digitalocean/floatingip owner=root group=root mode=0744
+
+- name: Configure FloatingIP resource
+  command: crm configure primitive FloatingIP ocf:digitalocean:floatingip params do_token={{ digital_ocean_access_token }} floating_ip={{ floating_ip }}
+  when: pacemaker_config.stdout.find('floatingip') == -1 and ansible_hostname == "host1"

@@ -1,0 +1,3 @@
+
+- include: tinc.yml
+  tags: tinc

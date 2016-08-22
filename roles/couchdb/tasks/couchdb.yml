@@ -1,0 +1,49 @@
+
+- name: install necessary packages
+  apt: name={{ item }} state=installed
+  with_items:
+    - erlang-nox
+    - erlang-dev
+    - build-essential
+    - libmozjs185-dev
+    - libnspr4
+    - libnspr4-0d
+    - libnspr4-dev
+    - libcurl4-openssl-dev
+    - curl
+    - libicu-dev
+
+- name: Setup CouchDB group
+  group: name=couchdb state=present
+
+- name: Setup CouchDB user
+  user: name=couchdb state=present system=yes home=/usr/local/var/lib/couchdb group=couchdb
+
+- name: Download CouchDB
+  get_url: url={{ couchdb_download_url }} dest=/tmp/{{ couchdb_file_name }}
+
+- name: Verify SHASUM of CouchDB downloaded
+  shell: curl {{ couchdb_shasum_url }} | grep {{ couchdb_file_name }} | sha1sum -c chdir=/tmp/
+
+- name: Unpack CouchDB
+  command: tar -xvzf {{ couchdb_file_name }} chdir=/tmp/
+
+- name: Compile and install CouchDB
+  shell:
+    ./configure --prefix=/usr/local --with-js-lib=/usr/lib --with-js-include=/usr/include/mozjs --enable-init && make && make install
+    chdir=/tmp/{{ couchdb_file_tag }}
+
+- name: Link CouchDB exec prog
+  file: src=/usr/local/etc/init.d/couchdb dest=/etc/init.d/couchdb state=link
+
+- name: Link CouchDB logrotate
+  file: src=/usr/local/etc/logrotate.d/couchdb dest=/etc/logrotate.d/couchdb state=link
+
+- name: Create directories
+  file: path={{ item }} recurse=yes state=directory owner=couchdb group=couchdb mode=0770
+  with_items:
+    - /usr/local/lib/couchdb
+    - /usr/local/etc/couchdb
+    - /usr/local/var/lib/couchdb
+    - /usr/local/var/log/couchdb
+    - /usr/local/var/run/couchdb

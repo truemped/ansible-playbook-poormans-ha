@@ -1,0 +1,61 @@
+
+- name: install some packages for simp_le
+  apt: pkg={{ item }} state=present
+  with_items:
+    - ca-certificates
+    - gcc
+    - libssl-dev
+    - libffi-dev
+    - python
+    - python-dev
+    - python-virtualenv
+
+- name: clone the simp_le repo
+  git: repo=https://github.com/kuba/simp_le.git dest=/root/simp_le version=8f258bc098a84b7a20c2732536d0740244d814f7
+
+- name: install in venv
+  command: /root/simp_le/venv.sh
+  args:
+    chdir: /root/simp_le
+    creates: /root/simp_le/venv/
+
+- name: copy letsencrypt script
+  template: src=letsencrypt.sh dest=/root/letsencrypt.sh mode=0700 owner=root group=root
+
+- name: Ensure shared ssl directory exists
+  file: path=/storage/shared/ssl/.well-known/acme-challenge state=directory owner=www-data group=www-data mode=0744
+  run_once: true
+  delegate_to: host1
+
+- name: Ensure data directory exists
+  file: path=/root/simp_le/data state=directory owner=root group=root mode=0600
+
+  #- name: run the acme client
+  #command: /root/letsencrypt.sh
+  #register: le_client_result
+  #failed_when: le_client_result.rc not in [0, 1, 2]
+
+- name: ensure cron for let's encrypt is present
+  cron: name="let's encrypt" minute="0" hour="3" job="/root/letsencrypt.sh" state=present
+
+- name: copy source files
+  command: cp /root/simp_le/data/{{ item }} /storage/shared/ssl/{{ item }}
+  args:
+    creates: /storage/shared/ssl/{{ item }}
+  with_items:
+    - key.pem
+    - fullchain.pem
+
+- name: Create custom DH-Params
+  command: openssl dhparam -out /storage/shared/ssl/dhparams_{{ item }}.pem {{ item }} creates=/storage/shared/ssl/dhparams_{{ item }}.pem
+  with_items:
+      - 1024
+      - 4096
+  tags: dhparams
+
+- name: Ensure permissions for DH-Params
+  file: path=/storage/shared/ssl/dhparams_{{ item }}.pem group=root owner=root mode=0640
+  with_items:
+      - 1024
+      - 4096
+  tags: dhparams

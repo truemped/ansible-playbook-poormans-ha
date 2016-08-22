@@ -1,0 +1,12 @@
+my_private_ip: 1.2.3.4
+other_private_ip: 1.2.3.5
+
+corosync_node_name: host1
+corosync_node_id: 1
+corosync_other_node_name: host2
+corosync_other_node_id: 2
+
+tinc_private_ip: 10.0.0.1
+my_internal_hostname: host1
+tinc_other_ip: 10.0.0.2
+other_internal_hostname: host2

@@ -1,0 +1,11 @@
+
+solr_user: solr
+solr_version: 3.6.2
+solr_install_path: /opt/solr
+solr_home: /usr/local/var/lib/solr
+solr_log_path: /usr/local/var/log/solr.log
+
+solr_host: "127.0.0.1"
+solr_port: "8983"
+solr_xms: "32M"
+solr_xmx: "64M"

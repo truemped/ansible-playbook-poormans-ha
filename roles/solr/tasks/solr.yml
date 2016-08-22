@@ -1,0 +1,104 @@
+
+- name: install java
+  apt: name=openjdk-7-jre-headless state=installed
+
+- name: Ensure solr_user group exists.
+  group: "name={{ solr_user }} state=present"
+
+- name: Ensure solr_user exists.
+  user:
+    name: "{{ solr_user }}"
+    state: present
+    group: "{{ solr_user }}"
+    system: yes
+    home: /opt/solr
+
+- name: Set solr_filename for Solr 4.x.
+  set_fact:
+    "solr_filename=solr-{{ solr_version }}"
+  when: "solr_version.split('.')[0] == '4'"
+
+- name: Set solr_filename for Solr 3.x.
+  set_fact:
+    solr_filename: "apache-solr-{{ solr_version }}"
+  when: "solr_version.split('.')[0] == '3'"
+
+- name: Check if Solr is already installed.
+  stat: "path={{ solr_install_path }}/{{ solr_filename }}/dist/{{ solr_filename }}.war"
+  register: solr_war_file
+
+- name: Download Solr.
+  get_url:
+    url: "{{ apache_mirror }}/dist/lucene/solr/{{ solr_version }}/{{ solr_filename }}.tgz"
+    dest: "/tmp/{{ solr_filename }}.tgz"
+    force: no
+  when: not solr_war_file.stat.exists
+
+- name: Expand Solr.
+  unarchive:
+    src: "/tmp/{{ solr_filename }}.tgz"
+    dest: "/tmp"
+    creates: "/tmp/{{ solr_filename }}/dist/{{ solr_filename }}.war"
+    copy: no
+  when: not solr_war_file.stat.exists
+
+- name: Copy Solr into place.
+  command: "cp -r /tmp/{{ solr_filename }} {{ solr_install_path }}"
+  when: not solr_war_file.stat.exists
+
+- name: Ensure Solr install files are owned by the solr_user.
+  file:
+    path: "{{ solr_install_path }}"
+    owner: "{{ solr_user }}"
+    group: "{{ solr_user }}"
+    recurse: yes
+  when: not solr_war_file.stat.exists
+
+- name: Ensure solr_home directory exists.
+  file:
+    path: "{{ solr_home }}"
+    state: directory
+    owner: "{{ solr_user }}"
+    group: "{{ solr_user }}"
+    mode: 0755
+
+- name: upload solr core config
+  copy: src=solr.xml dest={{ solr_home }}
+
+- name: ensure core directories exist
+  file:
+    path: "{{ solr_home }}/{{ item.core }}/{{ item.directory}}"
+    state: directory
+    owner: "{{ solr_user }}"
+    group: "{{ solr_user }}"
+    mode: 0755
+  with_items:
+    - {core: 'index', directory: 'conf'}
+    - {core: 'index', directory: 'data'}
+
+- name: ensure links to correct core config and schema are present
+  file:
+    src: "/etc/{{ item.conf }}/{{ item.filename }}"
+    dest: "{{ solr_home }}/{{ item.core }}/conf/{{ item.filename }}"
+    state: link
+  with_items:
+    - {conf: 'tvatweb', core: 'index', filename: 'solrconfig.xml'}
+    - {conf: 'tvatweb', core: 'index', filename: 'schema.xml'}
+
+- name: Ensure Solr home files are owned by the solr_user.
+  file:
+    path: "{{ solr_home }}"
+    owner: "{{ solr_user }}"
+    group: "{{ solr_user }}"
+    recurse: yes
+
+- name: Create systemd service file for solr
+  template: src=etc/systemd/system/solr.service.j2 dest=/etc/systemd/system/solr.service owner=root group=root mode=0644
+  register: solr_service_file
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when: solr_service_file.changed
+
+- name: ensure solr is running
+  service: name=solr state=started enabled=yes

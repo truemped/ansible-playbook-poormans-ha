@@ -1,0 +1,37 @@
+- name: Install security-related packages
+  apt: pkg={{ item }} state=installed
+  with_items:
+    - fail2ban
+    - lynis
+    - rkhunter
+  tags: deps
+
+- name: Copy fail2ban configuration into place
+  template: src=etc/fail2ban/jail.local.j2 dest=/etc/fail2ban/jail.local
+  notify: restart fail2ban
+
+- name: Copy fail2ban custom filter and jails
+  copy: src=etc/fail2ban/{{ item }} dest=/etc/fail2ban/{{ item }}
+  with_items:
+    - filter.d/sshd-connection-closed.conf
+    - jail.d/sshd-connection-closed.conf
+  notify: restart fail2ban
+
+- name: Ensure fail2ban is started
+  service: name=fail2ban state=started
+
+- name: Update sshd config for PFS and more secure defaults
+  template: src=etc/ssh/sshd_config.j2 dest=/etc/ssh/sshd_config
+  notify: restart ssh
+
+- name: Update ssh config for more secure defaults
+  template: src=etc/ssh/ssh_config.j2 dest=/etc/ssh/ssh_config
+
+- name: copy rkhunter defaults config
+  copy: src=etc/default/rkhunter dest=/etc/default/rkhunter
+
+- name: copy rkhunter config
+  copy: src=etc/rkhunter.conf dest=/etc/rkhunter.conf
+
+- name: ensure rkhunter cron job
+  cron: name="rkhunter" minute=0 hour=4 job="/usr/bin/rkhunter --cronjob"

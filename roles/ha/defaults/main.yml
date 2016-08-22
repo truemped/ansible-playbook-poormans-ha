@@ -1,0 +1,4 @@
+corosync_node_name: primary
+corosync_node_id: 1
+corosync_other_node_name: secondary
+corosync_other_node_id: 2

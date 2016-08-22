@@ -1,0 +1,20 @@
+
+---
+# This is the top-level playbook that defines our entire infrastructure.
+
+- hosts: all
+  user: user
+  become: True
+  gather_facts: True
+  roles:
+    - common
+    - security
+    - tinc
+    - ha
+    - couchdb
+    - solr
+    - glusterfs
+    - thumbor
+    - ssl
+    - role: jdauphant.nginx
+      tags: nginx

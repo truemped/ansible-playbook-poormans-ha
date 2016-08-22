@@ -1,0 +1,10 @@
+---
+
+- name: restart ntp
+  service: name=ntp state=restarted
+
+- name: restart supervisor
+  service: name=supervisor state=restarted
+
+- name: reload supervisor
+  command: supervisorctl reread && sleep 1 && supervisorctl update

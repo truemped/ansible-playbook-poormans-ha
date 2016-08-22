@@ -1,0 +1,8 @@
+
+couchdb_version: 1.6.1
+couchdb_version_installed: 0
+
+couchdb_file_tag: "apache-couchdb-{{ couchdb_version }}"
+couchdb_file_name: "{{ couchdb_file_tag }}.tar.gz"
+couchdb_download_url: "{{ apache_mirror }}/dist/couchdb/source/{{ couchdb_version }}/{{ couchdb_file_name }}"
+couchdb_shasum_url: "{{ couchdb_download_url }}.sha"

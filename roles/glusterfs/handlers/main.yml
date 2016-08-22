@@ -1,0 +1,3 @@
+
+- name: start gluster shared volume
+  command: gluster volume start shared

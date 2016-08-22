@@ -1,0 +1,48 @@
+
+- name: install required packages
+  apt: name=glusterfs-server state=installed
+  with_items:
+    - glusterfs-server
+    - glusterfs-client
+  tags: glusterfs
+
+- name: setup firewall
+  ufw: rule=allow port={{ item.port }} proto={{ item.proto }} to={{ tinc_private_ip }} from={{ tinc_other_ip }}
+  with_items:
+    - { port: 111, proto: "tcp" }
+    - { port: 111, proto: "udp" }
+    - { port: 2049, proto: "tcp" }
+    - { port: 24007, proto: "tcp" }
+    - { port: 49152, proto: "tcp" }
+    - { port: 49153, proto: "tcp" }
+    - { port: 49154, proto: "tcp" }
+    - { port: 49155, proto: "tcp" }
+    - { port: 38465, proto: "tcp" }
+    - { port: 38466, proto: "tcp" }
+    - { port: 38467, proto: "tcp" }
+  tags: glusterfs
+
+- name: setup firewall (udp)
+  ufw: rule=allow port={{ item }} proto=udp to={{ tinc_private_ip }} from={{ tinc_other_ip }}
+  with_items:
+    - 111
+  tags: glusterfs
+
+- name: create glusterfs storage directory
+  file: path=/data state=directory owner=root group=root mode=0755
+  tags: glusterfs
+
+- include: glusterfs.yml
+  tags: glusterfs
+  run_once: true
+  delegate_to: host1
+
+# Mount configuration.
+- name: Ensure the Gluster volume is mounted.
+  mount:
+    name: "/storage/shared"
+    src: "{{ my_internal_hostname }}:/shared"
+    fstype: glusterfs
+    opts: "defaults,_netdev"
+    state: mounted
+  tags: glusterfs

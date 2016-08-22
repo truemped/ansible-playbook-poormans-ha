@@ -1,0 +1,3 @@
+
+- include: thumbor.yml
+  tags: thumbor

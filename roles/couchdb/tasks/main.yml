@@ -1,0 +1,37 @@
+
+- name: Checking if CouchDB is installed
+  uri: url="http://{{ tinc_private_ip }}:5984/" return_content=yes
+  ignore_errors: True
+  register: couchdb_response
+  tags: couchdb
+
+- name: Retrieve CouchDB version
+  set_fact: couchdb_version_installed="{{ (couchdb_response.content|from_json).version }}"
+  when: couchdb_response|success
+  tags: couchdb
+
+- include: couchdb.yml
+  tags: couchdb
+  when: couchdb_version_installed != "{{ couchdb_version }}"
+
+- name: Upload systemd service
+  copy: src=etc/systemd/system/couchdb.service dest=/etc/systemd/system/couchdb.service owner=root group=root mode=0644
+  tags: couchdb
+  register: couchdb_service_file
+
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  when: couchdb_service_file.changed
+
+- name: Start CouchDB
+  service: name=couchdb enabled=yes state=started
+  when: couchdb_version_installed != "{{ couchdb_version }}"
+  tags: couchdb
+
+- name: Make sure couchdb is running
+  wait_for: host={{ tinc_private_ip }} port=5984 delay=1
+  tags: couchdb
+
+- name: allow couchdb ports for private interfaces
+  ufw: rule=allow port=5984 proto=tcp to={{ tinc_private_ip }} from={{ tinc_other_ip }}
+  tags: couchdb
